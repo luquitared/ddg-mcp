@@ -239,6 +239,17 @@ Use the ddg-ai-chat tool to ask "What are the latest developments in quantum com
 Use the search-results-summary prompt with query "space exploration" and style "detailed"
 ```
 
+## Claude config
+"ddg-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/PATH/TO/YOUR/INSTALLATION/ddg-mcp",
+        "run",
+        "ddg-mcp"
+      ]
+  },
+
 ## Development
 
 ### Building and Publishing
