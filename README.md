@@ -1,6 +1,6 @@
 # ddg-mcp MCP server
 
-DuckDuckGo search API MCP
+DuckDuckGo search API MCP - A server that provides DuckDuckGo search capabilities through the Model Context Protocol.
 
 ## Components
 
@@ -12,21 +12,149 @@ The server implements a simple note storage system with:
 
 ### Prompts
 
-The server provides a single prompt:
-- summarize-notes: Creates summaries of all stored notes
+The server provides the following prompts:
+- **summarize-notes**: Creates summaries of all stored notes
   - Optional "style" argument to control detail level (brief/detailed)
   - Generates prompt combining all current notes with style preference
+- **search-results-summary**: Creates a summary of DuckDuckGo search results
+  - Required "query" argument for the search term
+  - Optional "style" argument to control detail level (brief/detailed)
 
 ### Tools
 
-The server implements one tool:
-- add-note: Adds a new note to the server
+The server implements the following tools:
+
+#### Note Management
+- **add-note**: Adds a new note to the server
   - Takes "name" and "content" as required string arguments
   - Updates server state and notifies clients of resource changes
 
+#### DuckDuckGo Search Tools
+- **ddg-text-search**: Search the web for text results using DuckDuckGo
+  - Required: "keywords" - Search query keywords
+  - Optional: "region", "safesearch", "timelimit", "max_results"
+  
+- **ddg-image-search**: Search the web for images using DuckDuckGo
+  - Required: "keywords" - Search query keywords
+  - Optional: "region", "safesearch", "timelimit", "size", "color", "type_image", "layout", "license_image", "max_results"
+  
+- **ddg-news-search**: Search for news articles using DuckDuckGo
+  - Required: "keywords" - Search query keywords
+  - Optional: "region", "safesearch", "timelimit", "max_results"
+  
+- **ddg-video-search**: Search for videos using DuckDuckGo
+  - Required: "keywords" - Search query keywords
+  - Optional: "region", "safesearch", "timelimit", "resolution", "duration", "license_videos", "max_results"
+  
+- **ddg-ai-chat**: Chat with DuckDuckGo AI
+  - Required: "keywords" - Message or question to send to the AI
+  - Optional: "model" - AI model to use (options: "gpt-4o-mini", "llama-3.3-70b", "claude-3-haiku", "o3-mini", "mistral-small-3")
+
+## Installation
+
+### Prerequisites
+
+- Python 3.9 or higher
+- [uv](https://github.com/astral-sh/uv) (recommended) or pip
+
+### Install from PyPI
+
+```bash
+# Using uv
+uv install ddg-mcp
+
+# Using pip
+pip install ddg-mcp
+```
+
+### Install from Source
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/ddg-mcp.git
+cd ddg-mcp
+```
+
+2. Install the package:
+```bash
+# Using uv
+uv install -e .
+
+# Using pip
+pip install -e .
+```
+
 ## Configuration
 
-[TODO: Add configuration details specific to your implementation]
+### Required Dependencies
+
+The server requires the `duckduckgo-search` package, which will be installed automatically when you install `ddg-mcp`.
+
+If you need to install it manually:
+```bash
+uv install duckduckgo-search
+# or
+pip install duckduckgo-search
+```
+
+## DuckDuckGo Search Parameters
+
+### Common Parameters
+
+These parameters are available for most search types:
+
+- **region**: Region code for localized results (default: "wt-wt")
+  - Examples: "us-en" (US English), "uk-en" (UK English), "ru-ru" (Russian)
+  - See [DuckDuckGo regions](https://duckduckgo.com/params) for more options
+
+- **safesearch**: Content filtering level (default: "moderate")
+  - "on": Strict filtering
+  - "moderate": Moderate filtering
+  - "off": No filtering
+
+- **timelimit**: Time range for results
+  - "d": Last day
+  - "w": Last week
+  - "m": Last month
+  - "y": Last year (not available for news/videos)
+
+- **max_results**: Maximum number of results to return (default: 10)
+
+### Search Operators
+
+You can use these operators in your search keywords:
+
+- `cats dogs`: Results about cats or dogs
+- `"cats and dogs"`: Results for exact term "cats and dogs"
+- `cats -dogs`: Fewer dogs in results
+- `cats +dogs`: More dogs in results
+- `cats filetype:pdf`: PDFs about cats (supported: pdf, doc(x), xls(x), ppt(x), html)
+- `dogs site:example.com`: Pages about dogs from example.com
+- `cats -site:example.com`: Pages about cats, excluding example.com
+- `intitle:dogs`: Page title includes the word "dogs"
+- `inurl:cats`: Page URL includes the word "cats"
+
+### Image Search Specific Parameters
+
+- **size**: "Small", "Medium", "Large", "Wallpaper"
+- **color**: "color", "Monochrome", "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Pink", "Brown", "Black", "Gray", "Teal", "White"
+- **type_image**: "photo", "clipart", "gif", "transparent", "line"
+- **layout**: "Square", "Tall", "Wide"
+- **license_image**: "any", "Public", "Share", "ShareCommercially", "Modify", "ModifyCommercially"
+
+### Video Search Specific Parameters
+
+- **resolution**: "high", "standard"
+- **duration**: "short", "medium", "long"
+- **license_videos**: "creativeCommon", "youtube"
+
+### AI Chat Models
+
+- **gpt-4o-mini**: OpenAI's GPT-4o mini model
+- **llama-3.3-70b**: Meta's Llama 3.3 70B model
+- **claude-3-haiku**: Anthropic's Claude 3 Haiku model
+- **o3-mini**: OpenAI's O3 mini model
+- **mistral-small-3**: Mistral AI's small model
 
 ## Quickstart
 
@@ -67,6 +195,64 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
   ```
 </details>
+
+## Usage Examples
+
+### Text Search
+
+```
+Use the ddg-text-search tool to search for "climate change solutions"
+```
+
+Advanced example:
+```
+Use the ddg-text-search tool to search for "renewable energy filetype:pdf site:edu" with region "us-en", safesearch "off", timelimit "y", and max_results 20
+```
+
+### Image Search
+
+```
+Use the ddg-image-search tool to find images of "renewable energy" with color set to "Green"
+```
+
+Advanced example:
+```
+Use the ddg-image-search tool to find images of "mountain landscape" with size "Large", color "Blue", type_image "photo", layout "Wide", and license_image "Public"
+```
+
+### News Search
+
+```
+Use the ddg-news-search tool to find recent news about "artificial intelligence" from the last day
+```
+
+Advanced example:
+```
+Use the ddg-news-search tool to search for "space exploration" with region "uk-en", timelimit "w", and max_results 15
+```
+
+### Video Search
+
+```
+Use the ddg-video-search tool to find videos about "machine learning tutorials" with duration set to "medium"
+```
+
+Advanced example:
+```
+Use the ddg-video-search tool to search for "cooking recipes" with resolution "high", duration "short", license_videos "creativeCommon", and max_results 10
+```
+
+### AI Chat
+
+```
+Use the ddg-ai-chat tool to ask "What are the latest developments in quantum computing?" using the claude-3-haiku model
+```
+
+### Search Results Summary
+
+```
+Use the search-results-summary prompt with query "space exploration" and style "detailed"
+```
 
 ## Development
 
