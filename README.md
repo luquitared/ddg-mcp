@@ -4,32 +4,17 @@ DuckDuckGo search API MCP - A server that provides DuckDuckGo search capabilitie
 
 ## Components
 
-### Resources
-
-The server implements a simple note storage system with:
-- Custom note:// URI scheme for accessing individual notes
-- Each note resource has a name, description and text/plain mimetype
-
 ### Prompts
 
 The server provides the following prompts:
-- **summarize-notes**: Creates summaries of all stored notes
-  - Optional "style" argument to control detail level (brief/detailed)
-  - Generates prompt combining all current notes with style preference
 - **search-results-summary**: Creates a summary of DuckDuckGo search results
   - Required "query" argument for the search term
   - Optional "style" argument to control detail level (brief/detailed)
 
 ### Tools
 
-The server implements the following tools:
+The server implements the following DuckDuckGo search tools:
 
-#### Note Management
-- **add-note**: Adds a new note to the server
-  - Takes "name" and "content" as required string arguments
-  - Updates server state and notifies clients of resource changes
-
-#### DuckDuckGo Search Tools
 - **ddg-text-search**: Search the web for text results using DuckDuckGo
   - Required: "keywords" - Search query keywords
   - Optional: "region", "safesearch", "timelimit", "max_results"
@@ -71,7 +56,7 @@ pip install ddg-mcp
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/ddg-mcp.git
+git clone https://github.com/misanthropic-ai/ddg-mcp.git
 cd ddg-mcp
 ```
 
@@ -281,6 +266,32 @@ Note: You'll need to set PyPI credentials via environment variables or command f
 - Token: `--token` or `UV_PUBLISH_TOKEN`
 - Or username/password: `--username`/`UV_PUBLISH_USERNAME` and `--password`/`UV_PUBLISH_PASSWORD`
 
+### Automated Publishing with GitHub Actions
+
+This repository includes a GitHub Actions workflow for automated publishing to PyPI. The workflow is triggered when:
+
+1. A new GitHub Release is created
+2. The workflow is manually triggered via the GitHub Actions interface
+
+To set up automated publishing:
+
+1. Generate a PyPI API token:
+   - Go to https://pypi.org/manage/account/token/
+   - Create a new token with scope limited to the `ddg-mcp` project
+   - Copy the token value (you'll only see it once)
+
+2. Add the token to your GitHub repository secrets:
+   - Go to your repository on GitHub
+   - Navigate to Settings > Secrets and variables > Actions
+   - Click "New repository secret"
+   - Name: `PYPI_API_TOKEN`
+   - Value: Paste your PyPI token
+   - Click "Add secret"
+
+3. To publish a new version:
+   - Update the version number in `pyproject.toml`
+   - Create a new release on GitHub or manually trigger the workflow
+
 ### Debugging
 
 Since MCP servers run over stdio, debugging can be challenging. For the best debugging
@@ -290,7 +301,7 @@ experience, we strongly recommend using the [MCP Inspector](https://github.com/m
 You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/shannon/Workspace/artivus/ddg-mcp run ddg-mcp
+npx @modelcontextprotocol/inspector uv --directory /path/to/your/ddg-mcp run ddg-mcp
 ```
 
 

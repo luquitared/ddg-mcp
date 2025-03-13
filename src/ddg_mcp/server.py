@@ -7,41 +7,15 @@ from pydantic import AnyUrl
 import mcp.server.stdio
 from duckduckgo_search import DDGS
 
-# Store notes as a simple key-value dict to demonstrate state management
-notes: dict[str, str] = {}
-
 server = Server("ddg-mcp")
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
     """
-    List available note resources.
-    Each note is exposed as a resource with a custom note:// URI scheme.
+    List available resources.
+    Currently, no resources are exposed.
     """
-    return [
-        types.Resource(
-            uri=AnyUrl(f"note://internal/{name}"),
-            name=f"Note: {name}",
-            description=f"A simple note named {name}",
-            mimeType="text/plain",
-        )
-        for name in notes
-    ]
-
-@server.read_resource()
-async def handle_read_resource(uri: AnyUrl) -> str:
-    """
-    Read a specific note's content by its URI.
-    The note name is extracted from the URI host component.
-    """
-    if uri.scheme != "note":
-        raise ValueError(f"Unsupported URI scheme: {uri.scheme}")
-
-    name = uri.path
-    if name is not None:
-        name = name.lstrip("/")
-        return notes[name]
-    raise ValueError(f"Note not found: {name}")
+    return []
 
 @server.list_prompts()
 async def handle_list_prompts() -> list[types.Prompt]:
@@ -50,17 +24,6 @@ async def handle_list_prompts() -> list[types.Prompt]:
     Each prompt can have optional arguments to customize its behavior.
     """
     return [
-        types.Prompt(
-            name="summarize-notes",
-            description="Creates a summary of all notes",
-            arguments=[
-                types.PromptArgument(
-                    name="style",
-                    description="Style of the summary (brief/detailed)",
-                    required=False,
-                )
-            ],
-        ),
         types.Prompt(
             name="search-results-summary",
             description="Creates a summary of search results",
@@ -85,29 +48,8 @@ async def handle_get_prompt(
 ) -> types.GetPromptResult:
     """
     Generate a prompt by combining arguments with server state.
-    The prompt includes all current notes and can be customized via arguments.
     """
-    if name == "summarize-notes":
-        style = (arguments or {}).get("style", "brief")
-        detail_prompt = " Give extensive details." if style == "detailed" else ""
-
-        return types.GetPromptResult(
-            description="Summarize the current notes",
-            messages=[
-                types.PromptMessage(
-                    role="user",
-                    content=types.TextContent(
-                        type="text",
-                        text=f"Here are the current notes to summarize:{detail_prompt}\n\n"
-                        + "\n".join(
-                            f"- {name}: {content}"
-                            for name, content in notes.items()
-                        ),
-                    ),
-                )
-            ],
-        )
-    elif name == "search-results-summary":
+    if name == "search-results-summary":
         if not arguments or "query" not in arguments:
             raise ValueError("Missing required 'query' argument")
         
@@ -148,18 +90,6 @@ async def handle_list_tools() -> list[types.Tool]:
     Each tool specifies its arguments using JSON Schema validation.
     """
     return [
-        types.Tool(
-            name="add-note",
-            description="Add a new note",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "content": {"type": "string"},
-                },
-                "required": ["name", "content"],
-            },
-        ),
         types.Tool(
             name="ddg-text-search",
             description="Search the web for text results using DuckDuckGo",
@@ -248,32 +178,11 @@ async def handle_call_tool(
 ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
     """
     Handle tool execution requests.
-    Tools can modify server state and notify clients of changes.
     """
     if not arguments:
         raise ValueError("Missing arguments")
 
-    if name == "add-note":
-        note_name = arguments.get("name")
-        content = arguments.get("content")
-
-        if not note_name or not content:
-            raise ValueError("Missing name or content")
-
-        # Update server state
-        notes[note_name] = content
-
-        # Notify clients that resources have changed
-        await server.request_context.session.send_resource_list_changed()
-
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Added note '{note_name}' with content: {content}",
-            )
-        ]
-    
-    elif name == "ddg-text-search":
+    if name == "ddg-text-search":
         keywords = arguments.get("keywords")
         if not keywords:
             raise ValueError("Missing keywords")
