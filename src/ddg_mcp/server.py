@@ -157,19 +157,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["keywords"],
             },
-        ),
-        types.Tool(
-            name="ddg-ai-chat",
-            description="Chat with DuckDuckGo AI",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "keywords": {"type": "string", "description": "Message or question to send to the AI"},
-                    "model": {"type": "string", "enum": ["gpt-4o-mini", "llama-3.3-70b", "claude-3-haiku", "o3-mini", "mistral-small-3"], "description": "AI model to use", "default": "gpt-4o-mini"},
-                },
-                "required": ["keywords"],
-            },
-        ),
+        )
     ]
 
 @server.call_tool()
@@ -252,35 +240,29 @@ async def handle_call_tool(
         formatted_results = f"Image search results for '{keywords}':\n\n"
         
         text_results = []
-        image_results = []
         
         for i, result in enumerate(results, 1):
-            text_results.append(
-                types.TextContent(
-                    type="text",
-                    text=f"{i}. {result.get('title', 'No title')}\n"
-                         f"   Source: {result.get('source', 'Unknown')}\n"
-                         f"   URL: {result.get('url', 'No URL')}\n"
-                         f"   Size: {result.get('width', 'N/A')}x{result.get('height', 'N/A')}\n"
-                )
+            result_text = (
+                f"{i}. {result.get('title', 'No title')}\n"
+                f"   Source: {result.get('source', 'Unknown')}\n"
+                f"   URL: {result.get('url', 'No URL')}\n"
+                f"   Size: {result.get('width', 'N/A')}x{result.get('height', 'N/A')}\n"
             )
             
             image_url = result.get('image')
             if image_url:
-                image_results.append(
-                    types.ImageContent(
-                        type="image",
-                        url=image_url,
-                        alt_text=result.get('title', 'Image search result')
-                    )
+                result_text += f"   Image: {image_url}\n"
+            
+            result_text += "\n"
+            
+            text_results.append(
+                types.TextContent(
+                    type="text",
+                    text=result_text
                 )
+            )
         
-        # Interleave text and image results
-        combined_results = []
-        for text, image in zip(text_results, image_results):
-            combined_results.extend([text, image])
-        
-        return combined_results
+        return text_results
     
     elif name == "ddg-news-search":
         keywords = arguments.get("keywords")
@@ -404,3 +386,6 @@ async def main():
                 ),
             ),
         )
+
+if __name__ == "__main__":
+    asyncio.run(main())
